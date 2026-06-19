@@ -1,0 +1,18 @@
+{
+  "extends": ["config:recommended"],
+  "assignees": ["cujarrett"],
+  "minimumReleaseAge": "7 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["sidecar/Dockerfile"],
+      "matchStrings": [
+        "rolesanywhere\\.amazonaws\\.com/releases/(?<currentValue>[\\d.]+)/"
+      ],
+      "depNameTemplate": "aws/rolesanywhere-credential-helper",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ]
+}
