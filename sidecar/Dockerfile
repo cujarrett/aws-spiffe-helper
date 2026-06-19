@@ -7,7 +7,7 @@ RUN apk add --no-cache build-base
 RUN go install github.com/aws/rolesanywhere-credential-helper@${HELPER_VERSION} && \
     mv /go/bin/rolesanywhere-credential-helper /go/bin/aws_signing_helper
 
-FROM alpine:3.23
+FROM alpine:3.24
 
 RUN apk add --no-cache jq
 
