@@ -7,7 +7,7 @@
       "customType": "regex",
       "fileMatch": ["sidecar/Dockerfile"],
       "matchStrings": [
-        "rolesanywhere\\.amazonaws\\.com/releases/(?<currentValue>[\\d.]+)/"
+        "rolesanywhere\\.amazonaws\\.com/releases/(?<currentValue>[\\d.]+)/Aarch64/"
       ],
       "depNameTemplate": "aws/rolesanywhere-credential-helper",
       "datasourceTemplate": "github-releases",
