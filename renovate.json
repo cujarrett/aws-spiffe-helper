@@ -5,7 +5,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["sidecar/Dockerfile"],
+      "managerFilePatterns": [
+        "/sidecar/Dockerfile/"
+      ],
       "matchStrings": [
         "HELPER_VERSION=(?<currentValue>v[\\d.]+)"
       ],
