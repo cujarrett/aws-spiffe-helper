@@ -1,11 +1,15 @@
+FROM golang:1.26-alpine AS builder
+
+ARG HELPER_VERSION=v1.8.4
+
+RUN go install \
+      github.com/aws/rolesanywhere-credential-helper/cmd/aws_signing_helper@${HELPER_VERSION}
+
 FROM alpine:3.23
 
-RUN apk add --no-cache curl jq
+RUN apk add --no-cache jq
 
-RUN curl -fsSL \
-      "https://rolesanywhere.amazonaws.com/releases/1.8.4/Aarch64/Linux/aws_signing_helper" \
-      -o /usr/local/bin/aws_signing_helper && \
-    chmod +x /usr/local/bin/aws_signing_helper
+COPY --from=builder /go/bin/aws_signing_helper /usr/local/bin/aws_signing_helper
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
