@@ -2,8 +2,8 @@ FROM golang:1.26-alpine AS builder
 
 ARG HELPER_VERSION=v1.8.4
 
-RUN go install \
-      github.com/aws/rolesanywhere-credential-helper/cmd/aws_signing_helper@${HELPER_VERSION}
+RUN go install github.com/aws/rolesanywhere-credential-helper@${HELPER_VERSION} && \
+    mv /go/bin/rolesanywhere-credential-helper /go/bin/aws_signing_helper
 
 FROM alpine:3.23
 
