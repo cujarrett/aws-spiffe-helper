@@ -3,7 +3,7 @@ FROM alpine:3.21
 RUN apk add --no-cache curl jq
 
 RUN curl -fsSL \
-      "https://rolesanywhere.amazonaws.com/releases/1.3.0/Aarch64/Linux/aws_signing_helper" \
+      "https://rolesanywhere.amazonaws.com/releases/1.8.4/Aarch64/Linux/aws_signing_helper" \
       -o /usr/local/bin/aws_signing_helper && \
     chmod +x /usr/local/bin/aws_signing_helper
 
