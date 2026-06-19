@@ -30,4 +30,6 @@ jobs:
           context: sidecar
           platforms: linux/arm64
           push: true
-          tags: ghcr.io/cujarrett/aws-spiffe-helper:sha-${{ github.sha }}
+          tags: |
+            ghcr.io/cujarrett/aws-spiffe-helper:main
+            ghcr.io/cujarrett/aws-spiffe-helper:sha-${{ github.sha }}
