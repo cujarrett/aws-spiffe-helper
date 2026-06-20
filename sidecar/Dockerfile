@@ -19,7 +19,7 @@ RUN apk add --no-cache curl tar && \
 
 FROM alpine:3.24
 
-RUN apk add --no-cache jq openssl
+RUN apk add --no-cache jq
 
 COPY --from=builder /go/bin/aws_signing_helper /usr/local/bin/aws_signing_helper
 COPY --from=spire /usr/local/bin/spire-agent /usr/local/bin/spire-agent

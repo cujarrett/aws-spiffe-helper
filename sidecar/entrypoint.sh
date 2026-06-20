@@ -6,7 +6,7 @@ log() { echo "[aws-spiffe-helper] $*"; }
 SPIFFE_SOCKET=/var/run/secrets/spiffe.io/api.sock
 SVID_DIR=/tmp/svid
 SVID_CERT=${SVID_DIR}/svid.0.pem
-SVID_KEY=${SVID_DIR}/svid.0.key.pem
+SVID_KEY=${SVID_DIR}/svid.0.key
 
 # AWS_BINDINGS is a comma-separated list of "mountPath:profile" pairs injected by the XApi composition.
 # Example: "/bindings/object-storage:object-storage,/bindings/nosql:nosql"
@@ -33,13 +33,6 @@ while true; do
   # Log what was written for debugging.
   log "SVID files: $(ls ${SVID_DIR} 2>/dev/null | tr '\n' ' ')"
 
-  # spire-agent writes the private key as PKCS#8 (BEGIN PRIVATE KEY).
-  # aws_signing_helper requires a legacy PEM format. Convert if needed.
-  KEY_HEADER=$(head -1 "${SVID_KEY}" 2>/dev/null || echo "")
-  if [ "${KEY_HEADER}" = "-----BEGIN PRIVATE KEY-----" ]; then
-    log "converting PKCS#8 key to legacy PEM format"
-    openssl pkcs8 -nocrypt -in "${SVID_KEY}" -out "${SVID_KEY}.legacy.pem" 2>/dev/null && mv "${SVID_KEY}.legacy.pem" "${SVID_KEY}"
-  fi
 
   # Write atomically to a temp file then rename — app containers never read a partial file.
   TEMP_FILE="${CREDS_FILE}.tmp"
