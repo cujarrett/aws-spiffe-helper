@@ -8,11 +8,12 @@ Every pod running on this cluster gets a short-lived X.509 certificate called a 
 
 When an app needs AWS credentials (e.g. to talk to S3 or DynamoDB), the XApi Crossplane composition adds this sidecar to the pod alongside the app. The sidecar:
 
-1. Waits for the SVID certificate to be mounted at startup
-2. Presents the certificate to [AWS IAM Roles Anywhere](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html), which validates it against the SPIRE trust anchor registered in AWS
-3. Receives short-lived STS credentials (access key + secret + session token) in return
-4. Writes those credentials into a shared file as named profiles — one per AWS binding
-5. Sleeps 50 minutes, then repeats (credentials expire after 1 hour)
+1. Waits for the SPIFFE Workload API socket to be available at startup
+2. Calls the SPIRE agent via the socket to fetch the X.509 SVID cert and key
+3. Presents the certificate to [AWS IAM Roles Anywhere](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html), which validates it against the SPIRE trust anchor registered in AWS
+4. Receives short-lived STS credentials (access key + secret + session token) in return
+5. Writes those credentials into a shared file as named profiles — one per AWS binding
+6. Sleeps 50 minutes, then repeats (credentials expire after 1 hour)
 
 The app container reads credentials from that shared file. It never handles certificates, calls AWS directly for credentials, or stores any long-lived secrets.
 
@@ -27,8 +28,8 @@ The app container reads credentials from that shared file. It never handles cert
 
 | Mount | Contents |
 |---|---|
-| `/var/run/secrets/spiffe.io/` | SVID cert (`tls.crt`) and key (`tls.key`) — provided by the SPIFFE CSI driver |
-| Each binding `mountPath` | `role-arn`, `profile-arn`, `trust-anchor-arn` files from the Crossplane binding Secret |
+| `/var/run/secrets/spiffe.io/` | SPIFFE Workload API socket (`api.sock`) — provided by the SPIFFE CSI driver. The sidecar calls `spire-agent api fetch x509` against this socket to obtain the SVID cert and key. |
+| Each binding `mountPath` | `role-arn`, `profile-arn` files from the Crossplane binding Secret |
 | `dirname($CREDS_FILE)` | Writable emptyDir shared with app containers |
 
 ## Credentials file format
@@ -55,6 +56,8 @@ ghcr.io/cujarrett/aws-spiffe-helper:main
 
 Built by CI on every push to `main`. ARM64 only (Raspberry Pi 5 nodes).
 
-## Updating `aws_signing_helper`
+## Updating binaries
 
-Bump the version in `sidecar/Dockerfile`, push to `main`, and roll the affected pods. No composition changes needed.
+To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile`, push to `main`, and roll affected pods.
+
+To update `spire-agent`: bump `SPIRE_VERSION` in `sidecar/Dockerfile`, push to `main`, and roll affected pods. Match the version running in the cluster (`kubectl exec -n spire-server spire-server-0 -- /opt/spire/bin/spire-server --version`).

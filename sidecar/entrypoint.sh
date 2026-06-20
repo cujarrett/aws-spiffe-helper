@@ -3,20 +3,33 @@ set -eu
 
 log() { echo "[aws-spiffe-helper] $*"; }
 
-SVID_CERT=/var/run/secrets/spiffe.io/tls.crt
-SVID_KEY=/var/run/secrets/spiffe.io/tls.key
+SPIFFE_SOCKET=/var/run/secrets/spiffe.io/api.sock
+SVID_DIR=/tmp/svid
+SVID_CERT=${SVID_DIR}/svid.0.pem
+SVID_KEY=${SVID_DIR}/svid.0.key.pem
 
 # AWS_BINDINGS is a comma-separated list of "mountPath:profile" pairs injected by the XApi composition.
 # Example: "/bindings/object-storage:object-storage,/bindings/nosql:nosql"
 # CREDS_FILE is the output path for the AWS credentials file.
 
-# Wait for the SVID to be mounted before the first exchange.
-until [ -f "${SVID_CERT}" ]; do
-  log "waiting for SVID at ${SVID_CERT}"
+mkdir -p "${SVID_DIR}"
+
+# Wait for the SPIFFE Workload API socket before the first exchange.
+until [ -S "${SPIFFE_SOCKET}" ]; do
+  log "waiting for SPIFFE socket at ${SPIFFE_SOCKET}"
   sleep 2
 done
 
 while true; do
+  # Fetch the X.509 SVID from the SPIRE agent via the Workload API socket.
+  spire-agent api fetch x509 \
+    -socketPath "${SPIFFE_SOCKET}" \
+    -write "${SVID_DIR}" > /dev/null 2>&1 || {
+    log "failed to fetch SVID from SPIFFE socket, retrying in 10s"
+    sleep 10
+    continue
+  }
+
   # Write atomically to a temp file then rename — app containers never read a partial file.
   TEMP_FILE="${CREDS_FILE}.tmp"
   > "${TEMP_FILE}"

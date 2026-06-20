@@ -4,11 +4,11 @@ Sidecar container that exchanges a SPIFFE X.509 SVID for AWS STS credentials usi
 
 ## Sidecar
 
-`sidecar/Dockerfile` builds `ghcr.io/cujarrett/aws-spiffe-helper`. It installs `aws_signing_helper` (ARM64 binary from the official AWS CDN) and runs `sidecar/entrypoint.sh`.
+`sidecar/Dockerfile` builds `ghcr.io/cujarrett/aws-spiffe-helper`. It installs `aws_signing_helper` and `spire-agent` (ARM64 binaries) and runs `sidecar/entrypoint.sh`.
 
-The sidecar reads `AWS_BINDINGS` (comma-separated `mountPath:profile` pairs), calls `aws_signing_helper credential-process` once per binding, and writes named profile sections directly to `CREDS_FILE`. Refreshes every 50 minutes.
+The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe.io/api.sock` (provided by the SPIFFE CSI driver), calls `spire-agent api fetch x509` to obtain the SVID cert and key, then calls `aws_signing_helper credential-process` once per binding and writes named profile sections directly to `CREDS_FILE`. Refreshes every 50 minutes.
 
-To update `aws_signing_helper`: bump the version in `sidecar/Dockerfile` and push to main.
+To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile` and push to main. To update `spire-agent`: bump `SPIRE_VERSION` in `sidecar/Dockerfile` and push to main. Match the cluster's SPIRE version.
 
 ## Copilot Rules
 - Never run `git commit`, `git push`, or any git command that writes to or modifies repository history or remotes.
