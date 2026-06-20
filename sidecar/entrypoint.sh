@@ -25,7 +25,8 @@ while true; do
   echo "${AWS_BINDINGS}" | tr ',' '\n' | while IFS=: read -r BINDING_DIR PROFILE_NAME; do
     ROLE_ARN=$(cat "${BINDING_DIR}/role-arn")
     PROFILE_ARN=$(cat "${BINDING_DIR}/profile-arn")
-    TRUST_ANCHOR_ARN=$(cat "${BINDING_DIR}/trust-anchor-arn")
+    # TRUST_ANCHOR_ARN is a platform-level value injected as an env var by the XApi composition.
+    # It is not stored in the binding Secret to avoid exposing the AWS account ID to app tenants.
 
     log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN})"
 
