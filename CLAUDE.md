@@ -10,8 +10,13 @@ The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe
 
 To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile` and push to main. To update `spire-agent`: bump `SPIRE_VERSION` in `sidecar/Dockerfile` and push to main. Match the cluster's SPIRE version.
 
-## Copilot Rules
+## Rules
+
 - Never run `git commit`, `git push`, or any git command that writes to or modifies repository history or remotes.
+
+### Pre-commit safety check
+
+Before telling the user to commit, always run `/pre-commit-review`. It checks for secrets, sensitive identifiers, PII, credential templates, and cluster safety, and returns explicit verdicts on whether the changes are safe for a public repo.
 
 ## Philosophy: Grug-Brained Development
 
