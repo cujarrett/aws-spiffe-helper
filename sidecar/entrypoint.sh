@@ -47,14 +47,14 @@ while true; do
 
     log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN})"
 
-    aws_signing_helper update \
+    AWS_SHARED_CREDENTIALS_FILE="${TEMP_FILE}" aws_signing_helper update \
+      --once \
       --certificate "${SVID_CERT}" \
       --private-key "${SVID_KEY}" \
       --role-arn "${ROLE_ARN}" \
       --profile-arn "${PROFILE_ARN}" \
       --trust-anchor-arn "${TRUST_ANCHOR_ARN}" \
-      --profile "${PROFILE_NAME}" \
-      --credentials-file "${TEMP_FILE}"
+      --profile "${PROFILE_NAME}"
 
     log "wrote profile [${PROFILE_NAME}] to ${TEMP_FILE}"
   done
