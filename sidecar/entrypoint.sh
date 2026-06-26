@@ -38,7 +38,7 @@ while true; do
   TEMP_FILE="${CREDS_FILE}.tmp"
   > "${TEMP_FILE}"
 
-  # Loop over each binding and append a profile section to the credentials file.
+  # Loop over each binding and write a named profile section to the credentials file.
   echo "${AWS_BINDINGS}" | tr ',' '\n' | while IFS=: read -r BINDING_DIR PROFILE_NAME; do
     ROLE_ARN=$(cat "${BINDING_DIR}/role-arn")
     PROFILE_ARN=$(cat "${BINDING_DIR}/profile-arn")
@@ -47,19 +47,14 @@ while true; do
 
     log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN})"
 
-    CREDS_JSON=$(aws_signing_helper credential-process \
+    aws_signing_helper update \
       --certificate "${SVID_CERT}" \
       --private-key "${SVID_KEY}" \
       --role-arn "${ROLE_ARN}" \
       --profile-arn "${PROFILE_ARN}" \
-      --trust-anchor-arn "${TRUST_ANCHOR_ARN}")
-
-    printf '[%s]\naws_access_key_id = %s\naws_secret_access_key = %s\naws_session_token = %s\n\n' \
-      "${PROFILE_NAME}" \
-      "$(echo "${CREDS_JSON}" | jq -r '.AccessKeyId')" \
-      "$(echo "${CREDS_JSON}" | jq -r '.SecretAccessKey')" \
-      "$(echo "${CREDS_JSON}" | jq -r '.SessionToken')" \
-      >> "${TEMP_FILE}"
+      --trust-anchor-arn "${TRUST_ANCHOR_ARN}" \
+      --profile "${PROFILE_NAME}" \
+      --credentials-file "${TEMP_FILE}"
 
     log "wrote profile [${PROFILE_NAME}] to ${TEMP_FILE}"
   done
