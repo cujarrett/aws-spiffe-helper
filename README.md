@@ -17,6 +17,8 @@ When an app needs AWS credentials (e.g. to talk to S3 or DynamoDB), the XApi Cro
 
 The app container reads credentials from that shared file. It never handles certificates, calls AWS directly for credentials, or stores any long-lived secrets.
 
+If a binding's files aren't readable yet or an exchange fails (AWS throttle, transient network blip), the sidecar keeps the previous credentials file untouched — it's still valid for up to an hour — and retries the whole cycle in 30 seconds instead of crashing.
+
 ## Platform context
 
 This helper is the runtime component that connects the pieces of my [platform](https://github.com/cujarrett/homelab/tree/main/platform) together:
@@ -34,6 +36,7 @@ That separation is what makes the developer experience clean: developers declare
 |---|---|
 | `AWS_BINDINGS` | Comma-separated `mountPath:profile` pairs (e.g. `/bindings/object-storage:object-storage,/bindings/nosql:nosql`) |
 | `CREDS_FILE` | Output path for the AWS credentials file (e.g. `/aws-credentials/credentials`) |
+| `TRUST_ANCHOR_ARN` | ARN of the IAM Roles Anywhere trust anchor. Injected as a platform-level value by the XApi composition — never stored in a binding Secret, since it embeds the AWS account ID. |
 
 ## Volumes expected
 
