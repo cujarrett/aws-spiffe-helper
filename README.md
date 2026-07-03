@@ -17,6 +17,17 @@ When an app needs AWS credentials (e.g. to talk to S3 or DynamoDB), the XApi Cro
 
 The app container reads credentials from that shared file. It never handles certificates, calls AWS directly for credentials, or stores any long-lived secrets.
 
+## Platform context
+
+This helper is the runtime component that connects the pieces of my [platform](https://github.com/cujarrett/homelab/tree/main/platform) together:
+
+- **Crossplane** provisions AWS resources, IAM roles, and Roles Anywhere profiles.
+- **SPIRE** proves the workload's identity with an X.509 SVID.
+- **This helper** exchanges that identity for temporary AWS credentials.
+- **The AWS SDK** consumes those credentials transparently.
+
+That separation is what makes the developer experience clean: developers declare that they need an AWS capability, while the platform handles identity, authorization, credential acquisition, and rotation behind the scenes.
+
 ## Environment variables
 
 | Variable | Description |
