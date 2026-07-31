@@ -16,7 +16,7 @@ To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile` an
 
 ### Pre-commit safety check
 
-Before telling the user to commit, always run `/pre-commit-review`. It checks for secrets, sensitive identifiers, PII, credential templates, and cluster safety, and returns explicit verdicts on whether the changes are safe for a public repo. Once it confirms the changes are safe, offer the user a suggested commit message — do not run `git commit` yourself.
+Before telling the user to commit, always run `/security-review`. It reviews the pending changes on the current branch for security issues. Once it confirms the changes are safe, offer the user a suggested commit message — do not run `git commit` yourself.
 
 ## Philosophy: Grug-Brained Development
 
