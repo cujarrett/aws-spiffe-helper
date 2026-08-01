@@ -53,7 +53,9 @@ while true; do
       break
     fi
 
-    log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN})"
+    # Role name only — the full ARN embeds the AWS account id, and these logs ship
+    # to a log aggregator. The name is the part that identifies which binding failed.
+    log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN##*/})"
 
     if ! AWS_SHARED_CREDENTIALS_FILE="${TEMP_FILE}" aws_signing_helper update \
       --once \
