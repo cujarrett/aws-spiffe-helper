@@ -26,6 +26,8 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 RUN addgroup -S app && adduser -S app -G app
-USER app
+# Numeric, not the name — the kubelet cannot verify runAsNonRoot for a user it
+# cannot resolve, and fails the container closed. Same uid the account already has.
+USER 100
 
 ENTRYPOINT ["/entrypoint.sh"]
