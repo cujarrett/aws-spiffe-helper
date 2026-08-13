@@ -18,7 +18,8 @@ JWT_FILE=${SVID_DIR}/jwt
 
 # Must match a client id registered on the AWS OIDC identity provider, or STS rejects the token.
 STS_AUDIENCE=${STS_AUDIENCE:-sts.amazonaws.com}
-STS_ENDPOINT=${STS_ENDPOINT:-https://sts.amazonaws.com}
+# Regional, not the global endpoint — the mesh egress allowlist only permits this host.
+STS_ENDPOINT=${STS_ENDPOINT:-https://sts.us-east-1.amazonaws.com}
 
 # Defaulted so a migrated pod, where the composition no longer injects it, does not die
 # on set -u before reaching the branch that never uses it.

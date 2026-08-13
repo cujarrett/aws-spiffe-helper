@@ -48,7 +48,7 @@ That separation is what makes the developer experience clean: developers declare
 | `AWS_BINDINGS` | Comma-separated `mountPath:profile` pairs (e.g. `/bindings/object-storage:object-storage,/bindings/nosql:nosql`) |
 | `CREDS_FILE` | Output path for the AWS credentials file (e.g. `/aws-credentials/credentials`) |
 | `STS_AUDIENCE` | Audience requested for the JWT-SVID, default `sts.amazonaws.com`. Must match a client id registered on the AWS OIDC identity provider, or STS rejects the token. |
-| `STS_ENDPOINT` | STS endpoint, default `https://sts.amazonaws.com`. |
+| `STS_ENDPOINT` | STS endpoint, default `https://sts.us-east-1.amazonaws.com`. Regional because the mesh egress allowlist permits only that host. |
 | `TRUST_ANCHOR_ARN` | ARN of the IAM Roles Anywhere trust anchor. Only read for bindings that still carry a `profile-arn`, and unnecessary once every binding has migrated. Injected as a platform-level value by the XApi composition, never stored in a binding Secret, since it embeds the AWS account ID. |
 
 ## Volumes expected
