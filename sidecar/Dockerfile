@@ -19,6 +19,10 @@ RUN apk add --no-cache curl tar && \
 
 FROM alpine:3.24
 
+# curl posts the token to STS. AssumeRoleWithWebIdentity is unsigned, so no SDK is needed.
+RUN apk add --no-cache curl
+
+# Still needed while some bindings carry a profile-arn. Drop once every binding has migrated.
 COPY --from=builder /go/bin/aws_signing_helper /usr/local/bin/aws_signing_helper
 COPY --from=spire /usr/local/bin/spire-agent /usr/local/bin/spire-agent
 
