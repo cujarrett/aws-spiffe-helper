@@ -1,6 +1,6 @@
-# aws-spiffe-helper
+# workload-identity-sidecar
 
-Sidecar container that exchanges a [SPIFFE](https://spiffe.io/) X.509 SVID for AWS STS credentials using [IAM Roles Anywhere](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html). The [XApi](https://github.com/cujarrett/homelab/tree/main/platform/api) Crossplane composition injects this sidecar into pods that declare AWS resource bindings.
+Sidecar container that exchanges a [SPIFFE](https://spiffe.io/) SVID for short-lived cloud credentials. AWS today, via OIDC federation; the name is deliberately not AWS-specific so a second cloud (Entra) can land without another rename. The [XApi](https://github.com/cujarrett/homelab/tree/main/platform/api) Crossplane composition injects this sidecar into pods that declare cloud resource bindings.
 
 ## How it works
 
@@ -78,7 +78,7 @@ App containers point `AWS_SHARED_CREDENTIALS_FILE` at this file and select a pro
 ## Image
 
 ```
-ghcr.io/cujarrett/aws-spiffe-helper:main
+ghcr.io/cujarrett/workload-identity-sidecar:main
 ```
 
 Built by CI on every push to `main`. ARM64 only (Raspberry Pi 5 nodes).

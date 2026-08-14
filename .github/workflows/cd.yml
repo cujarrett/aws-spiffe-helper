@@ -31,5 +31,5 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/cujarrett/aws-spiffe-helper:main
-            ghcr.io/cujarrett/aws-spiffe-helper:sha-${{ github.sha }}
+            ghcr.io/cujarrett/workload-identity-sidecar:main
+            ghcr.io/cujarrett/workload-identity-sidecar:sha-${{ github.sha }}

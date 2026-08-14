@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-log() { echo "[aws-spiffe-helper] $*"; }
+log() { echo "[workload-identity-sidecar] $*"; }
 
 SPIFFE_SOCKET=/var/run/secrets/spiffe.io/api.sock
 SVID_DIR=/tmp/svid

@@ -1,12 +1,12 @@
-# aws-spiffe-helper
+# workload-identity-sidecar
 
-Sidecar container that exchanges a SPIFFE X.509 SVID for AWS STS credentials using IAM Roles Anywhere. The `ghcr.io/cujarrett/aws-spiffe-helper` image is built by CI in this repo and injected into [XApi](https://github.com/cujarrett/homelab/tree/main/platform/api) pods by the XApi Crossplane composition when the pod declares AWS resource bindings.
+Sidecar container that exchanges a SPIFFE SVID for short-lived cloud credentials. The `ghcr.io/cujarrett/workload-identity-sidecar` image is built by CI in this repo and injected into [XApi](https://github.com/cujarrett/homelab/tree/main/platform/api) pods by the XApi Crossplane composition when the pod declares cloud resource bindings.
 
 ## Sidecar
 
-`sidecar/Dockerfile` builds `ghcr.io/cujarrett/aws-spiffe-helper`. It installs `aws_signing_helper` and `spire-agent` (ARM64 binaries) and runs `sidecar/entrypoint.sh`.
+`sidecar/Dockerfile` builds `ghcr.io/cujarrett/workload-identity-sidecar`. It installs `aws_signing_helper` and `spire-agent` (ARM64 binaries) and runs `sidecar/entrypoint.sh`.
 
-The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe.io/api.sock` (provided by the SPIFFE CSI driver), calls `spire-agent api fetch x509` to obtain the SVID cert and key, then calls `aws_signing_helper update --once` once per binding and writes named profile sections to a temp file that is atomically renamed to `CREDS_FILE`. Refreshes every 50 minutes; on a failed exchange it keeps the previous credentials file and retries in 30 seconds.
+The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe.io/api.sock` (provided by the SPIFFE CSI driver), then fetches both a JWT-SVID and an X.509 SVID from the SPIRE agent each cycle. Per binding it checks for a `profile-arn` file: absent means present the JWT-SVID to AWS STS via `AssumeRoleWithWebIdentity` (a plain unsigned HTTPS POST); present means fall back to `aws_signing_helper update --once` against IAM Roles Anywhere with the X.509 SVID. Either way it writes a named profile section to a temp file that is atomically renamed to `CREDS_FILE`. Refreshes every 50 minutes; on a failed exchange it keeps the previous credentials file and retries in 30 seconds.
 
 To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile` and push to main. To update `spire-agent`: bump `SPIRE_VERSION` in `sidecar/Dockerfile` and push to main. Match the cluster's SPIRE version.
 
