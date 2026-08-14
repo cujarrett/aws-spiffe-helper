@@ -6,6 +6,11 @@ set -eu
 # the cluster's public signing keys are registered with AWS ahead of time (OIDC
 # federation). Presenting that token to AWS STS trades it for real, short-lived
 # AWS credentials. No password and no long-lived key are ever involved.
+#
+# Entra works differently: there is no exchange call here at all. The Azure SDK's
+# WorkloadIdentityCredential does the client_assertion swap itself, reading the raw
+# SVID straight from ENTRA_FEDERATED_TOKEN_FILE - the same contract AKS uses natively.
+# This sidecar's only Entra job is keeping that one file fresh.
 
 log() { echo "[workload-identity-sidecar] $*"; }
 
@@ -22,7 +27,36 @@ STS_AUDIENCE=${STS_AUDIENCE:-sts.amazonaws.com}
 # Regional, not the global endpoint - the mesh egress allowlist only permits this host.
 STS_ENDPOINT=${STS_ENDPOINT:-https://sts.us-east-1.amazonaws.com}
 
+# ENTRA_FEDERATED_TOKEN_FILE, if set, enables the Entra loop - path the Azure SDK reads
+# the raw SVID from. Fixed by Microsoft, not the sts.amazonaws.com one AWS uses above -
+# one audience cannot serve both clouds, so this is always a second, independent token.
+ENTRA_AUDIENCE=${ENTRA_AUDIENCE:-api://AzureADTokenExchange}
+# Comfortably under SPIRE's 5-minute default JWT-SVID TTL for this cluster.
+ENTRA_REFRESH_INTERVAL=${ENTRA_REFRESH_INTERVAL:-240}
+
 mkdir -p "${SVID_DIR}"
+
+# Keeps ENTRA_FEDERATED_TOKEN_FILE holding a live SVID. No STS-equivalent call here -
+# unlike AWS, the token itself is the final artifact; the app's Azure SDK trades it for
+# a real access token on its own, on demand.
+entra_loop() {
+  mkdir -p "$(dirname "${ENTRA_FEDERATED_TOKEN_FILE}")"
+  while true; do
+    TEMP_FILE="${ENTRA_FEDERATED_TOKEN_FILE}.tmp"
+    if ! spire-agent api fetch jwt \
+        -audience "${ENTRA_AUDIENCE}" \
+        -socketPath "${SPIFFE_SOCKET}" 2>/dev/null \
+        | sed -n '2p' | tr -d '\t ' > "${TEMP_FILE}" || [ ! -s "${TEMP_FILE}" ]; then
+      log "failed to fetch Entra JWT-SVID, retrying in 10s"
+      rm -f "${TEMP_FILE}"
+      sleep 10
+      continue
+    fi
+    mv "${TEMP_FILE}" "${ENTRA_FEDERATED_TOKEN_FILE}"
+    log "Entra federated token file refreshed at ${ENTRA_FEDERATED_TOKEN_FILE}"
+    sleep "${ENTRA_REFRESH_INTERVAL}"
+  done
+}
 
 # Pull one field out of an STS XML response. Newlines are stripped first so a single
 # regex works regardless of how the response happens to be wrapped.
@@ -30,12 +64,7 @@ xml_field() {
   printf '%s' "$1" | tr -d '\n\r' | sed -n "s|.*<$2>\(.*\)</$2>.*|\1|p"
 }
 
-# Wait for the SPIFFE Workload API socket before the first exchange.
-until [ -S "${SPIFFE_SOCKET}" ]; do
-  log "waiting for SPIFFE socket at ${SPIFFE_SOCKET}"
-  sleep 2
-done
-
+aws_loop() {
 while true; do
   # Ask the SPIRE agent already running on this node for a signed token proving
   # "this is that exact pod". -audience scopes it: STS will only accept a token
@@ -124,3 +153,32 @@ PROFILE
   # STS sessions last 1 hour. Refresh at 50 minutes.
   sleep 3000
 done
+}
+
+# Wait for the SPIFFE Workload API socket before the first exchange.
+until [ -S "${SPIFFE_SOCKET}" ]; do
+  log "waiting for SPIFFE socket at ${SPIFFE_SOCKET}"
+  sleep 2
+done
+
+# Either loop can be enabled alone or together - an Api can bind AWS resources,
+# opt into Entra, both, or neither. Backgrounding one and keeping the other in the
+# foreground is enough to hold the container open; `wait` blocks until every
+# backgrounded loop exits, which in practice is never, since both retry forever
+# instead of dying on a failed exchange.
+RUN_AWS=0
+RUN_ENTRA=0
+[ -n "${AWS_BINDINGS:-}" ] && RUN_AWS=1
+[ -n "${ENTRA_FEDERATED_TOKEN_FILE:-}" ] && RUN_ENTRA=1
+
+if [ "${RUN_AWS}" -eq 1 ] && [ "${RUN_ENTRA}" -eq 1 ]; then
+  aws_loop &
+  entra_loop
+elif [ "${RUN_AWS}" -eq 1 ]; then
+  aws_loop
+elif [ "${RUN_ENTRA}" -eq 1 ]; then
+  entra_loop
+else
+  log "no bindings configured, nothing to do"
+  sleep infinity
+fi
