@@ -4,11 +4,11 @@ Sidecar container that exchanges a SPIFFE SVID for short-lived cloud credentials
 
 ## Sidecar
 
-`sidecar/Dockerfile` builds `ghcr.io/cujarrett/workload-identity-sidecar`. It installs `aws_signing_helper` and `spire-agent` (ARM64 binaries) and runs `sidecar/entrypoint.sh`.
+`sidecar/Dockerfile` builds `ghcr.io/cujarrett/workload-identity-sidecar`. It installs `spire-agent` (ARM64 binary) and runs `sidecar/entrypoint.sh`.
 
-The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe.io/api.sock` (provided by the SPIFFE CSI driver), then fetches both a JWT-SVID and an X.509 SVID from the SPIRE agent each cycle. Per binding it checks for a `profile-arn` file: absent means present the JWT-SVID to AWS STS via `AssumeRoleWithWebIdentity` (a plain unsigned HTTPS POST); present means fall back to `aws_signing_helper update --once` against IAM Roles Anywhere with the X.509 SVID. Either way it writes a named profile section to a temp file that is atomically renamed to `CREDS_FILE`. Refreshes every 50 minutes; on a failed exchange it keeps the previous credentials file and retries in 30 seconds.
+The sidecar waits for the SPIFFE Workload API socket at `/var/run/secrets/spiffe.io/api.sock` (provided by the SPIFFE CSI driver), then fetches a JWT-SVID from the SPIRE agent each cycle. Per binding it presents that token to AWS STS via `AssumeRoleWithWebIdentity` (a plain unsigned HTTPS POST) and writes a named profile section to a temp file that is atomically renamed to `CREDS_FILE`. Refreshes every 50 minutes; on a failed exchange it keeps the previous credentials file and retries in 30 seconds.
 
-To update `aws_signing_helper`: bump `HELPER_VERSION` in `sidecar/Dockerfile` and push to main. To update `spire-agent`: bump `SPIRE_VERSION` in `sidecar/Dockerfile` and push to main. Match the cluster's SPIRE version.
+Renovate opens a PR automatically when SPIRE cuts a release, tracking `SPIRE_VERSION` in `sidecar/Dockerfile`. The PR carries a reminder to check it against the cluster's running version before merging.
 
 ## Rules
 

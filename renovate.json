@@ -9,12 +9,20 @@
         "/sidecar/Dockerfile/"
       ],
       "matchStrings": [
-        "HELPER_VERSION=(?<currentValue>v[\\d.]+)"
+        "SPIRE_VERSION=(?<currentValue>[\\d.]+)"
       ],
-      "depNameTemplate": "aws/rolesanywhere-credential-helper",
+      "depNameTemplate": "spiffe/spire",
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["spiffe/spire"],
+      "prBodyNotes": [
+        "⚠️ **Before merging:** check this version against the cluster's SPIRE version (`kubectl exec -n spire-server spire-server-0 -- /opt/spire/bin/spire-server --version`). Merging bumps the pinned `spire-agent` binary and rolls affected pods."
+      ]
     }
   ]
 }
