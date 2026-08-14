@@ -2,11 +2,11 @@
 
 Sidecar container that exchanges a [SPIFFE](https://spiffe.io/) SVID for short-lived cloud credentials via OIDC federation. The [XApi](https://github.com/cujarrett/homelab/tree/main/platform/api) Crossplane composition injects this sidecar into pods that declare cloud resource bindings.
 
-**Not yet implemented: Entra.** The name is deliberately not AWS-specific so a second cloud can land here rather than in a second sidecar — but everything below (`STS_AUDIENCE`, the credential exchange, the profile format) is AWS-shaped today. There is no Entra code path yet.
+**Not yet implemented: Entra.** The name is deliberately not AWS-specific so a second cloud can land here rather than in a second sidecar - but everything below (`STS_AUDIENCE`, the credential exchange, the profile format) is AWS-shaped today. There is no Entra code path yet.
 
 ## How it works
 
-Every pod running on this cluster gets a short-lived [SPIFFE JWT-SVID](https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#svid) from the SPIRE agent. Think of it as a cryptographic identity badge for the pod — it proves *which workload* is running without any passwords or API keys.
+Every pod running on this cluster gets a short-lived [SPIFFE JWT-SVID](https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#svid) from the SPIRE agent. Think of it as a cryptographic identity badge for the pod - it proves *which workload* is running without any passwords or API keys.
 
 When an app needs AWS credentials (e.g. to talk to S3 or DynamoDB), the XApi Crossplane composition adds this sidecar to the pod alongside the app. The sidecar:
 
@@ -14,14 +14,14 @@ When an app needs AWS credentials (e.g. to talk to S3 or DynamoDB), the XApi Cro
 2. Calls the SPIRE agent via the socket to fetch a JWT-SVID
 3. Presents that token to AWS STS via `sts:AssumeRoleWithWebIdentity`, once per binding
 4. Receives short-lived STS credentials (access key + secret + session token) in return
-5. Writes those credentials into a shared file as named profiles — one per AWS binding
+5. Writes those credentials into a shared file as named profiles - one per AWS binding
 6. Sleeps 50 minutes, then repeats (credentials expire after 1 hour)
 
 `sts:AssumeRoleWithWebIdentity` needs no request signing, because the token is itself the credential. AWS verifies it by fetching the signing keys from the OIDC issuer published by the cluster and checking the signature, the `sub` claim and the `aud` claim. That is why the exchange is a plain HTTPS POST and needs no AWS SDK or CLI in the image.
 
 The app container reads credentials from that shared file. It never handles the token, calls AWS directly for credentials, or stores any long-lived secrets.
 
-If a binding's files aren't readable yet or an exchange fails (AWS throttle, transient network blip), the sidecar keeps the previous credentials file untouched — it's still valid for up to an hour — and retries the whole cycle in 30 seconds instead of crashing.
+If a binding's files aren't readable yet or an exchange fails (AWS throttle, transient network blip), the sidecar keeps the previous credentials file untouched - it's still valid for up to an hour - and retries the whole cycle in 30 seconds instead of crashing.
 
 ## Platform context
 
@@ -65,7 +65,7 @@ aws_secret_access_key = REDACTED
 aws_session_token = REDACTED
 ```
 
-App containers point `AWS_SHARED_CREDENTIALS_FILE` at this file and select a profile via `AWS_PROFILE_<BINDING>` env vars — both injected by the XApi composition.
+App containers point `AWS_SHARED_CREDENTIALS_FILE` at this file and select a profile via `AWS_PROFILE_<BINDING>` env vars - both injected by the XApi composition.
 
 ## Image
 

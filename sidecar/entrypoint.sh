@@ -2,7 +2,7 @@
 set -eu
 
 # What this does: SPIRE, already running in this cluster, hands this pod a signed
-# token proving which pod it is — a JWT-SVID. AWS trusts SPIRE's signature because
+# token proving which pod it is - a JWT-SVID. AWS trusts SPIRE's signature because
 # the cluster's public signing keys are registered with AWS ahead of time (OIDC
 # federation). Presenting that token to AWS STS trades it for real, short-lived
 # AWS credentials. No password and no long-lived key are ever involved.
@@ -19,7 +19,7 @@ JWT_FILE=${SVID_DIR}/jwt
 
 # Must match a client id registered on the AWS OIDC identity provider, or STS rejects the token.
 STS_AUDIENCE=${STS_AUDIENCE:-sts.amazonaws.com}
-# Regional, not the global endpoint — the mesh egress allowlist only permits this host.
+# Regional, not the global endpoint - the mesh egress allowlist only permits this host.
 STS_ENDPOINT=${STS_ENDPOINT:-https://sts.us-east-1.amazonaws.com}
 
 mkdir -p "${SVID_DIR}"
@@ -51,7 +51,7 @@ while true; do
     continue
   fi
 
-  # Write atomically to a temp file then rename — app containers never read a partial file.
+  # Write atomically to a temp file then rename - app containers never read a partial file.
   TEMP_FILE="${CREDS_FILE}.tmp"
   : > "${TEMP_FILE}"
 
@@ -68,13 +68,13 @@ while true; do
       break
     fi
 
-    # Role name only — the full ARN embeds the AWS account id, and these logs ship
+    # Role name only - the full ARN embeds the AWS account id, and these logs ship
     # to a log aggregator. The name is the part that identifies which binding failed.
     log "exchanging SVID for STS credentials (profile: ${PROFILE_NAME}, role: ${ROLE_ARN##*/})"
 
     # Hand the JWT to AWS STS. AWS fetched SPIRE's public signing keys from the
     # cluster's OIDC endpoint ahead of time, so it can verify the signature itself
-    # — then it checks the token's subject and audience against this role's trust
+    # - then it checks the token's subject and audience against this role's trust
     # policy. A match returns real, temporary credentials for that role.
     # AssumeRoleWithWebIdentity needs no request signing, because the token itself
     # is the proof: there is nothing else to sign, and no AWS SDK is needed.
